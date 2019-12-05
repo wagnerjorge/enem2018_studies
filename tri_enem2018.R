@@ -134,5 +134,7 @@ plot(model_mt, type = 'infotrace')
 #Correlation between proficiencies of the exam
 ##Scatterplot of the variables combined with probability distribution and correlation
 prof %>% ggpairs()
-##Low correlation between variables, then independent modeling analysis is used
+##Low correlation between variables, then we use independent modeling analysis. In other
+##words, due the response variables are not correlated the recommended is to use a
+##regression model for each variable, i.e. three regression problems
 cor(prof)
