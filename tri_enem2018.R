@@ -4,6 +4,7 @@ library(tidyr)
 library(stringr)
 library(splitstackshape)
 library(mirt)
+library(GGally)
 
 setwd("F:/microdados/DADOS")  
 memory.limit(24576)
@@ -107,6 +108,8 @@ prof_ch <- apply(prof_ch, 1, function(x) scale_change(x, 500, 100) )
 prof_lc <- apply(prof_lc, 1, function(x) scale_change(x, 500, 100) )
 prof_mt <- apply(prof_mt, 1, function(x) scale_change(x, 500, 100) )
 
+prof <- data.frame(CN = prof_cn, CH = prof_ch, LC = prof_lc, MT = prof_mt)
+
 #Number of corrected questions (ncq)
 ncq_cn <- apply(cor_cn, 1, sum)
 ncq_ch <- apply(cor_ch, 1, sum)
@@ -126,3 +129,10 @@ plot(model_cn, type = 'infotrace')
 plot(model_ch, type = 'infotrace')
 plot(model_lc, type = 'infotrace')
 plot(model_mt, type = 'infotrace')
+
+
+#Correlation between proficiencies of the exam
+##Scatterplot of the variables combined with probability distribution and correlation
+prof %>% ggpairs()
+##Low correlation between variables, then independent modeling analysis is used
+cor(prof)
