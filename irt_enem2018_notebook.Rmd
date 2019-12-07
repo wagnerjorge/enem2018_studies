@@ -1,5 +1,5 @@
 ---
-title: "R Notebook"
+title: "ENEM 2018 Studies (In construction)"
 output: html_notebook
 ---
 
@@ -175,8 +175,50 @@ plot(model_mt, type = 'infotrace')
 ```
 
 
+It is fundamental the quantitaty of information stored by each item (question). Then, we calculate the information for each item from some theta values.
 
 
+```{r}
+theta <- matrix(seq(-4, 4, by = .1))
+seq_cn <- matrix(seq_len(length(names_cn)), ncol = 1)
+seq_ch <- matrix(seq_len(length(names_ch)), ncol = 1)
+seq_lc <- matrix(seq_len(length(names_lc)), ncol = 1)
+seq_mt <- matrix(seq_len(length(names_mt)), ncol = 1)
+
+extr_item_cn <- lapply(seq_cn, function(x) extract.item(model_cn, x))
+extr_item_ch <- lapply(seq_ch, function(x) extract.item(model_ch, x))
+extr_item_lc <- lapply(seq_lc, function(x) extract.item(model_lc, x))
+extr_item_mt <- lapply(seq_mt, function(x) extract.item(model_mt, x))
+
+info_item_cn <- lapply(extr_item_cn, function(x) iteminfo(x, theta))
+info_item_ch <- lapply(extr_item_ch, function(x) iteminfo(x, theta))
+info_item_lc <- lapply(extr_item_lc, function(x) iteminfo(x, theta))
+info_item_mt <- lapply(extr_item_mt, function(x) iteminfo(x, theta))
+
+```
+
+The `b` parameter indicates the difficulty of item. The first most hard question for each test are: (i) CN - 44, 41, 18, 28, and 14; (ii) CH - 17, 24, 10, 30, and 41; (iii) LC - 43, 19, 20, 15, and 34; (iv) MT - 45, 13, 35, 39, and 15.
 
 
+```{r}
+#The items are sorted from difficulty parameters b
+dif_cn <- data.frame(question = seq_cn, coef_cn$items) %>% arrange(desc(b))
+dif_ch <- data.frame(question = seq_ch, coef_ch$items) %>% arrange(desc(b))
+dif_lc <- data.frame(question = seq_lc, coef_lc$items) %>% arrange(desc(b))
+dif_mt <- data.frame(question = seq_mt, coef_mt$items) %>% arrange(desc(b))
+
+dif_cn
+dif_ch
+dif_lc
+dif_mt
+```
+
+
+#I NEED TO WORK HERE
+
+Low correlation between variables, then we use independent modeling analysis. In other words, due the response variables are not correlated the recommended is to use a regression model for each variable, i.e. three regression problems
+```{r}
+prof %>% ggpairs()
+cor(prof)
+```
 
