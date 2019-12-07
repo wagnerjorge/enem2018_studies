@@ -1,6 +1,14 @@
-#---------------#
-# Packages used #
-#---------------#
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+
+Installation of the packages to clean and extract knowledge from ENEM dataset. 
+
+```{r}
 library(dplyr)
 library(data.table)
 library(tidyr)
@@ -8,26 +16,25 @@ library(stringr)
 library(splitstackshape)
 library(mirt)
 library(GGally)
+```
 
-#-----------------#
-# Reading dataset #
-#-----------------#
+Due the size of the raw data we read the data from a local directory. To illustrate the analysis built here, we use only the first 100k individuals. This will be modefied for all students in other analysis.
+
+```{r}
 setwd("F:/microdados/DADOS")  
 memory.limit(24576)
 
-
-##Reading first 100k observations
-#if nrows = -1 all observations will be readed
 dat <- data.table::fread(input='enem2018.csv',
                          integer64='character',
                          skip=0,  #Ler do inicio
                          nrows=100000,
                          na.strings = "", 
                          showProgress = TRUE)
+```
 
-#----------------------------------------#
-# IRT variables selection and data clean #
-#----------------------------------------#
+The construction of IRT model is made from four test that compose the exam (CN - Ciencias e Natureza, CH - Ciencias Humanas, Linguagens e Codigos, MT - Matematica e suas Tecnologias which indicate Sciences and Nature, Sciences and Humans, Languages, and Codes, and Mathematic and its Technology, respectively). For this, We build the answers given by students and answer key datasets (`ans` and `gab`, respectively) droping missing values for all items in each test.
+
+```{r}
 ans <- dat %>% select(TX_RESPOSTAS_CN, TX_RESPOSTAS_CH, 
                       TX_RESPOSTAS_LC, TX_RESPOSTAS_MT)
 gab <- dat %>% select(TX_GABARITO_CN, TX_GABARITO_CH,
@@ -35,8 +42,12 @@ gab <- dat %>% select(TX_GABARITO_CN, TX_GABARITO_CH,
 
 ans <- ans %>% drop_na()
 gab <- gab %>% drop_na()
+```
 
 
+The number of questions is computed. Also, the answers given by the students for each test are stored in four datasets as can be seen below. Similarly is made with the answers key.
+
+```{r}
 numb_question <- gab[1, ] %>% str_length()
 
 names_cn <- paste('Q', seq_len(numb_question[1]), sep = '')
@@ -45,33 +56,36 @@ names_lc <- paste('Q', seq_len(numb_question[3]), sep = '')
 names_mt <- paste('Q', seq_len(numb_question[4]), sep = '')
 
 
-# Answers of cn
 ans_cn <-  ans[, 1] %>%
   cSplit('TX_RESPOSTAS_CN', sep = '', stripWhite = FALSE)
-# Answers of ch
+
 ans_ch <-  ans[, 2] %>%
   cSplit('TX_RESPOSTAS_CH', sep = '', stripWhite = FALSE)
-# Answers of lc
+
 ans_lc <-  ans[, 3] %>%
   cSplit('TX_RESPOSTAS_LC', sep = '', stripWhite = FALSE)
-# Answers of cn
+
 ans_mt <-  ans[, 4] %>%
   cSplit('TX_RESPOSTAS_MT', sep = '', stripWhite = FALSE)
 
-# Gabarito of cn
+
 gab_cn <-  gab[, 1] %>%
   cSplit('TX_GABARITO_CN', sep = '', stripWhite = FALSE)
-# Answers of ch
+
 gab_ch <-  gab[, 2] %>%
   cSplit('TX_GABARITO_CH', sep = '', stripWhite = FALSE)
-# Answers of lc
+
 gab_lc <-  gab[, 3] %>%
   cSplit('TX_GABARITO_LC', sep = '', stripWhite = FALSE)
-# Answers of cn
+
 gab_mt <-  gab[, 4] %>%
   cSplit('TX_GABARITO_MT', sep = '', stripWhite = FALSE)
 
-#Chaging question names in ans and gab
+```
+
+Next, we renamed the answers and answers key for `Q.`, where `.` indicates the question number.
+
+```{r}
 names(ans_ch) <- names_cn
 names(ans_cn) <- names_ch
 names(ans_lc) <- names_lc
@@ -81,21 +95,30 @@ names(gab_ch) <- names_cn
 names(gab_cn) <- names_ch
 names(gab_lc) <- names_lc
 names(gab_mt) <- names_mt
+```
 
+To apply the IRT model with three parameters we define as one the correct answers and zero otherwise.
+
+```{r}
 #Correction of questions
 cor_cn <- + (as.matrix(ans_cn) == as.matrix(gab_cn))
 cor_ch <- + (as.matrix(ans_ch) == as.matrix(gab_ch))
 cor_lc <- + (as.matrix(ans_lc) == as.matrix(gab_lc))
 cor_mt <- + (as.matrix(ans_mt) == as.matrix(gab_mt))
+```
 
-#--------------#
-# IRT Modeling #
-#--------------#
+From `mirt` function the Multivariate Item Response Theory (MIRT) was applied. We highlight that the problem is univariate, i.e. there is only one population in study.
+
+```{r}
 model_cn <- mirt(cor_cn, 1, type = '3PL')
 model_ch <- mirt(cor_ch, 1, type = '3PL')
 model_lc <- mirt(cor_lc, 1, type = '3PL')
 model_mt <- mirt(cor_mt, 1, type = '3PL')
+```
 
+Coefficients and performance are displayed below.
+
+```{r}
 #Coefficients
 coef_cn <- coef(model_cn, simplify = TRUE, IRTpars = TRUE)
 coef_ch <- coef(model_ch, simplify = TRUE, IRTpars = TRUE)
@@ -107,75 +130,53 @@ M2(model_cn)
 M2(model_ch)
 M2(model_lc)
 M2(model_mt)
+```
 
-#Calculating proficiency by exam
+Once that the modeling is made we calculate the scores for each student and each test in (0, 1) scale. The (0, 1) means that the scores are have mean zero and standard deviation 100.
+
+
+```{r}
 prof_cn <- fscores(model_cn, method = 'EAP')
 prof_ch <- fscores(model_ch, method = 'EAP')
 prof_lc <- fscores(model_lc, method = 'EAP')
 prof_mt <- fscores(model_mt, method = 'EAP')
+```
 
-#Rescaling proficiencies for scale (500, 100) 
+Based on the ENEM IRT approach, we resize the scores. The adopted range is (500, 100); the more or less distant from 500, the student will be considered more or less proficient, respectively.
+
+```{r}
+scale_change <- function(value, mu, sigma){
+  sigma * value + mu
+}
+
 prof_cn <- apply(prof_cn, 1, function(x) scale_change(x, 500, 100) )
 prof_ch <- apply(prof_ch, 1, function(x) scale_change(x, 500, 100) )
 prof_lc <- apply(prof_lc, 1, function(x) scale_change(x, 500, 100) )
 prof_mt <- apply(prof_mt, 1, function(x) scale_change(x, 500, 100) )
 
 prof <- data.frame(CN = prof_cn, CH = prof_ch, LC = prof_lc, MT = prof_mt)
+```
 
-#Number of corrected questions (ncq)
-ncq_cn <- apply(cor_cn, 1, sum)
-ncq_ch <- apply(cor_ch, 1, sum)
-ncq_lc <- apply(cor_lc, 1, sum)
-ncq_mt <- apply(cor_mt, 1, sum)
 
-#------------------#
-# Items diagnostic #
-#------------------#
-# Graphics
+
+
+```{r}
 plot(model_cn, type = 'trace')
 plot(model_ch, type = 'trace')
 plot(model_lc, type = 'trace')
 plot(model_mt, type = 'trace')
+```
 
-##Information by item
+```{r}
 plot(model_cn, type = 'infotrace')
 plot(model_ch, type = 'infotrace')
 plot(model_lc, type = 'infotrace')
 plot(model_mt, type = 'infotrace')
-
-
-#------------------------------#
-# Information analysis by item #
-#------------------------------#
-
-theta <- matrix(seq(-4, 4, by = .1))
-seq_cn <- matrix(seq_len(length(names_cn)), ncol = 1)
-seq_ch <- matrix(seq_len(length(names_ch)), ncol = 1)
-seq_lc <- matrix(seq_len(length(names_lc)), ncol = 1)
-seq_mt <- matrix(seq_len(length(names_mt)), ncol = 1)
-
-extr_item_cn <- lapply(seq_cn, function(x) extract.item(model_cn, x))
-extr_item_ch <- lapply(seq_ch, function(x) extract.item(model_ch, x))
-extr_item_lc <- lapply(seq_lc, function(x) extract.item(model_lc, x))
-extr_item_mt <- lapply(seq_mt, function(x) extract.item(model_mt, x))
-
-info_item_cn <- lapply(extr_item_cn, function(x) iteminfo(x, theta))
-info_item_ch <- lapply(extr_item_ch, function(x) iteminfo(x, theta))
-info_item_lc <- lapply(extr_item_lc, function(x) iteminfo(x, theta))
-info_item_mt <- lapply(extr_item_mt, function(x) iteminfo(x, theta))
-
-#The items are sorted from difficulty parameters b
-dif_cn <- data.frame(question = seq_cn, coef_cn$items) %>% arrange(desc(b))
-dif_ch <- data.frame(question = seq_ch, coef_ch$items) %>% arrange(desc(b))
-dif_lc <- data.frame(question = seq_lc, coef_lc$items) %>% arrange(desc(b))
-dif_mt <- data.frame(question = seq_mt, coef_mt$items) %>% arrange(desc(b))
+```
 
 
 
-#Correlation between proficiencies of the exam
-##Scatterplot of the variables combined with probability distribution and correlation
-prof %>% ggpairs()
-##Low correlation between variables, then we use independent modeling analysis. In other
-##words, due the response variables are not correlated the recommended is to use a
-##regression model for each variable, i.e. three regression problems
-cor(prof)
+
+
+
+
