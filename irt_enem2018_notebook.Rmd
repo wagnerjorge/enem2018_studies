@@ -165,7 +165,7 @@ prof_mt <- apply(prof_mt, 1, function(x) scale_change(x, 500, 100) )
 prof <- data.frame(CN = prof_cn, CH = prof_ch, LC = prof_lc, MT = prof_mt)
 ```
 
-
+In exam the test CN presents some items as more discriminant factor, i.e. they can be separate the most proficient students of the others. The items that have the three first best discriminant factor are Q42, Q40, and Q25. In CH test are Q45, Q42, and Q35. Similar interpretation should be used for LC and MT tests. Details can be seen in figures below.   
 
 ```{r}
 plot(model_cn, type = 'trace')
@@ -173,6 +173,7 @@ plot(model_ch, type = 'trace')
 plot(model_lc, type = 'trace')
 plot(model_mt, type = 'trace')
 ```
+It is fundamental the quantitaty of information stored by each item. The figures show the item information curve. Item information functions tend to look bell-shaped similar to the normal distribution. Highly discriminating items have tall, narrow information functions; they contribute greatly but over a narrow range. Less discriminating items provide less information but over a wider range. In this case, e.g. considering the CN test the items Q42, Q40, Q31, and Q25 are considered highly informative, but Q44, Q38, Q28, and Q32 have low information.
 
 ```{r}
 plot(model_cn, type = 'infotrace')
@@ -182,7 +183,7 @@ plot(model_mt, type = 'infotrace')
 ```
 
 
-It is fundamental the quantitaty of information stored by each item (question). Then, we calculate the information for each item from some theta values.
+Other way to calculate the information of each item is displayed below. Then, we calculate the information for each item from some theta values.
 
 
 ```{r}
@@ -221,9 +222,10 @@ dif_mt
 ```
 
 
-# Correlation analysis
+# Response variable study
+As mentioned we desire to evaluate the main variables that have influence in proficiency exam. For this, we analysis the correlation between the four variables, this study is important to define the statistical paradigm selected. Four regression models separately or a multivariate regression model.
 
-##I NEED TO WORK HERE
+## Correlation Analysis
 
 Low correlation between variables, then we use independent modeling analysis. In other words, due the response variables are not correlated the recommended is to use a regression model for each variable, i.e. four regression problems
 ```{r}
